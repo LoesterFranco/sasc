@@ -38,16 +38,19 @@
 
 //  CVS Log
 //
-//  $Id: sasc_brg.v,v 1.1.1.1 2002-09-16 16:16:40 rudi Exp $
+//  $Id: sasc_brg.v,v 1.2 2002-11-08 15:22:49 rudi Exp $
 //
-//  $Date: 2002-09-16 16:16:40 $
-//  $Revision: 1.1.1.1 $
+//  $Date: 2002-11-08 15:22:49 $
+//  $Revision: 1.2 $
 //  $Author: rudi $
 //  $Locker:  $
 //  $State: Exp $
 //
 // Change History:
 //               $Log: not supported by cvs2svn $
+//               Revision 1.1.1.1  2002/09/16 16:16:40  rudi
+//               Initial Checkin
+//
 //
 //
 //
@@ -121,7 +124,8 @@ always @(posedge clk)
 	if(!rst)	br_cnt <= #1 8'h0;
 	else
 	if(br_clr)	br_cnt <= #1 8'h0;
-	else		br_cnt <= #1 br_cnt + 8'h1;
+	else
+	if(ps_clr)	br_cnt <= #1 br_cnt + 8'h1;
 
 always @(posedge clk)
 	br_clr <= #1 (br_cnt == div1); // Prciese number of PS cycles
