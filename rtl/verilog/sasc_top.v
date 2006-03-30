@@ -38,16 +38,19 @@
 
 //  CVS Log
 //
-//  $Id: sasc_top.v,v 1.1.1.1 2002-09-16 16:16:42 rudi Exp $
+//  $Id: sasc_top.v,v 1.2 2006-03-30 02:47:07 rudi Exp $
 //
-//  $Date: 2002-09-16 16:16:42 $
-//  $Revision: 1.1.1.1 $
+//  $Date: 2006-03-30 02:47:07 $
+//  $Revision: 1.2 $
 //  $Author: rudi $
 //  $Locker:  $
 //  $State: Exp $
 //
 // Change History:
 //               $Log: not supported by cvs2svn $
+//               Revision 1.1.1.1  2002/09/16 16:16:42  rudi
+//               Initial Checkin
+//
 //
 //
 //
@@ -125,7 +128,8 @@ wire		lock_en;
 reg		change;
 reg		rx_sio_ce_d, rx_sio_ce_r1, rx_sio_ce_r2, rx_sio_ce;
 reg	[1:0]	dpll_state, dpll_next_state;
-
+reg 	[5:0] 	rxd_dly; //New input delay used to ensure no baud clocks
+			// occur twice in one baud period
 ///////////////////////////////////////////////////////////////////
 //
 // IO Fifo's
@@ -203,10 +207,13 @@ always @(posedge clk)
 //
 
 always @(posedge clk)
-	rxd_s <= #1 rxd_i;
+begin
+    rxd_dly[5:1] <= #1 rxd_dly[4:0];
+	 rxd_dly[0] <= #1rxd_i;
+	 rxd_s <= #1rxd_dly[5];  // rxd_s = delay 1
+    rxd_r <= #1 rxd_s;  // rxd_r = delay 2	 
+end
 
-always @(posedge clk)
-	rxd_r <= #1 rxd_s;
 
 assign start = (rxd_r == IDLE_BIT) & (rxd_s == START_BIT);
 
@@ -249,11 +256,12 @@ always @(posedge clk)
 	if(sio_ce_x4)	rxd_r2 <= #1 rxd_r1;
 
 always @(posedge clk)
-	if(!rst)		change <= #1 1'b0;
-	else
-	if(rxd_r != rxd_s)	change <= #1 1'b1;
-	else
-	if(sio_ce_x4)		change <= #1 1'b0;
+    if(!rst)        
+        change <= #1 1'b0;
+    else if ((rxd_dly[1] != rxd_r1) || (rxd_dly[1] != rxd_s))
+        change <= #1 1'b1;
+    else if(sio_ce_x4)
+        change <= #1 1'b0;
 
 // DPLL FSM
 always @(posedge clk or negedge rst)
